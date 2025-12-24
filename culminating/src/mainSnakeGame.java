@@ -9,14 +9,19 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 	Rectangle[] walls = new Rectangle[5];
 	boolean up, down, left, right;
 	int speed = 4;
-	int screenWidth = 600;
-	int screenHeight = 600;
+	int screenWidth = 680;
+	int screenHeight = 680;
 	Thread thread;
 	int FPS = 60;
+    Graphics offScreenBuffer;
+    Image offScreenImage;
+	int SQUARE_SIZE = 60;
+	int board[][];
 	
 	public mainSnakeGame() {
 		setPreferredSize(new Dimension(screenWidth, screenHeight));
 		setVisible(true);
+        board = new int [10][10];
 		
 		thread = new Thread(this);
 		thread.start();
@@ -54,15 +59,57 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 	}
 	
 	public void paintComponent(Graphics g) {
+        // Set up the offscreen buffer the first time paint() is called
+        if (offScreenBuffer == null)
+		{
+			offScreenImage = createImage (this.getWidth (), this.getHeight ());
+			offScreenBuffer = offScreenImage.getGraphics ();
+		}
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g;
-		g2.setColor(Color.GREEN);
-		g2.fillRect(0, 0, screenWidth, screenHeight);
-		g2.setColor(Color.GRAY);
-		for(int i = 0; i < walls.length; i++)
-			g2.fill(walls[i]);
-		g2.setColor(Color.BLUE);
-		g2.fill(rect);
+		for (int row = 1; row < 11; row++) { // row
+            for (int column = 1; column < 11; column++) { // column
+                
+                // Find the x and y positions for each row and column
+                
+				int xPos = (column - 1) * SQUARE_SIZE + 40;
+				int yPos = row * SQUARE_SIZE - SQUARE_SIZE + 40;
+
+				// Draw the squares
+                Color myColor = new Color(0x2E7D32);
+                offScreenBuffer.setColor (myColor);
+                if (row % 2 == 0) {
+                    if (column % 2 == 0 && row % 2 != 0) {
+                        myColor = new Color(0xA5D6A7);
+                        offScreenBuffer.setColor (myColor);
+				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
+                    } else if (column % 2 != 0 && row % 2 == 0) {
+                        myColor = new Color (0x2E7D32);
+                        offScreenBuffer.setColor (myColor);
+				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
+                    }
+                } else {
+                    if (column % 2 == 0 && row % 2 != 0) {
+                        myColor = new Color(0x2E7D32);
+                        offScreenBuffer.setColor (myColor);
+				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
+                    } else if (column % 2 != 0 && row % 2 == 0) {
+                        myColor = new Color (0xA5D6A7);
+                        offScreenBuffer.setColor (myColor);
+				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
+                    }
+                }
+            }
+	    }
+        // Draw border
+        offScreenBuffer.setColor (Color.GREEN);
+        offScreenBuffer.fillRect (0, 0, 680, 40);
+        offScreenBuffer.fillRect (0, 0, 40, 680);
+        offScreenBuffer.fillRect (0, 642, 680, 40);
+        offScreenBuffer.fillRect (642, 0, 40, 680);
+
+        // Transfer the offScreenBuffer to the screen
+		g.drawImage (offScreenImage, 0, 0, this);
 	}
 
 	@Override
@@ -172,7 +219,7 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 	
 	public static void main(String[] args) {
 		JFrame frame = new JFrame ("Example");
-		MovingAndCollisions myPanel = new MovingAndCollisions ();
+		mainSnakeGame myPanel = new mainSnakeGame ();
 		frame.add(myPanel);
 		frame.addKeyListener(myPanel);
 		frame.setVisible(true);
