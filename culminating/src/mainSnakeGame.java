@@ -17,14 +17,24 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
     Image offScreenImage;
 	int SQUARE_SIZE = 60;
 	int board[][];
+	Image apple;
+	int xPos, yPos;
+	int randX, randY;
+	int [][] snake = new int [100][2];
 	
 	public mainSnakeGame() {
 		setPreferredSize(new Dimension(screenWidth, screenHeight));
 		setVisible(true);
         board = new int [10][10];
-		
 		thread = new Thread(this);
 		thread.start();
+		snake[0][0] = 2;
+		snake[0][1] = 4;
+		snake[1][0] = 1;
+		snake[1][1] = 4;
+		snake[2][0] = 0;
+		snake[2][1] = 4;
+
 	}
 	
 	@Override
@@ -43,22 +53,33 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 	}
 	
 	public void initialize() {
-		//setups before the game starts running
-		walls[0] = new Rectangle(200, 200, 60, 60);
-		walls[1] = new Rectangle(300, 40, 40, 100);
-		walls[2] = new Rectangle(450, 100, 80, 35);
-		walls[3] = new Rectangle(60, 60, 15, 15);
-		walls[4] = new Rectangle(250, 350, 150, 200);
+
+		// Set apple image
+		apple = new ImageIcon(getClass().getResource("APPLE.png")).getImage();
+		randX = ((int)(Math.random()*10)) * SQUARE_SIZE + 40;
+		randY = ((int)(Math.random()*10)) * SQUARE_SIZE + 40;
+
+		// //setups before the game starts running
+		// walls[0] = new Rectangle(200, 200, 60, 60);
+		// walls[1] = new Rectangle(300, 40, 40, 100);
+		// walls[2] = new Rectangle(450, 100, 80, 35);
+		// walls[3] = new Rectangle(60, 60, 15, 15);
+		// walls[4] = new Rectangle(250, 350, 150, 200);
 	}
 	
 	public void update() {
 		move();
 		keepInBound();
-		for(int i = 0; i < walls.length; i++)
+		for(int i = 0; i < walls.length; i++){
 			checkCollision(walls[i]);
+		}
+
+		// check for collision with apple
+		// add to score + toggle growing snake
 	}
 	
 	public void paintComponent(Graphics g) {
+		
         // Set up the offscreen buffer the first time paint() is called
         if (offScreenBuffer == null)
 		{
@@ -66,47 +87,59 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 			offScreenBuffer = offScreenImage.getGraphics ();
 		}
 		super.paintComponent(g);
+		offScreenBuffer.setColor(getBackground());
+		offScreenBuffer.fillRect(0, 0, getWidth(), getHeight());
+
 		Graphics2D g2 = (Graphics2D) g;
 		for (int row = 1; row < 11; row++) { // row
             for (int column = 1; column < 11; column++) { // column
-                
-                // Find the x and y positions for each row and column
-                
-				int xPos = (column - 1) * SQUARE_SIZE + 40;
-				int yPos = row * SQUARE_SIZE - SQUARE_SIZE + 40;
+				
+				// Find the x and y positions for each row and column                
+				xPos = (column - 1) * SQUARE_SIZE + 40;
+				yPos = (row - 1) * SQUARE_SIZE + 40;
 
 				// Draw the squares
                 Color myColor = new Color(0x2E7D32);
                 offScreenBuffer.setColor (myColor);
-                if (row % 2 == 0) {
-                    if (column % 2 == 0 && row % 2 != 0) {
+                if (column % 2 == 0) {
+                    if (row % 2 == 0) {
                         myColor = new Color(0xA5D6A7);
                         offScreenBuffer.setColor (myColor);
 				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
-                    } else if (column % 2 != 0 && row % 2 == 0) {
-                        myColor = new Color (0x2E7D32);
+                    } else {
+                        myColor = new Color (0x2A914E);
                         offScreenBuffer.setColor (myColor);
 				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
                     }
                 } else {
-                    if (column % 2 == 0 && row % 2 != 0) {
-                        myColor = new Color(0x2E7D32);
+                    if (row % 2 == 0) {
+                        myColor = new Color(0x2A914E);
                         offScreenBuffer.setColor (myColor);
 				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
-                    } else if (column % 2 != 0 && row % 2 == 0) {
+                    } else {
                         myColor = new Color (0xA5D6A7);
                         offScreenBuffer.setColor (myColor);
 				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
                     }
                 }
-            }
-	    }
+				
+				// Draw snake
+				offScreenBuffer.setColor(Color.BLUE);
+				offScreenBuffer.fillRect(40, 280, 180, 60);
+
+            	//g.drawImage(offScreenImage, 0, 0, null);
+			}
+		}
+		// draw apple
+		offScreenBuffer.drawImage(apple, randX, randY, this);
+
         // Draw border
-        offScreenBuffer.setColor (Color.GREEN);
+		Color myColor = new Color (0x2E7D32);
+        offScreenBuffer.setColor (myColor);
         offScreenBuffer.fillRect (0, 0, 680, 40);
         offScreenBuffer.fillRect (0, 0, 40, 680);
-        offScreenBuffer.fillRect (0, 642, 680, 40);
-        offScreenBuffer.fillRect (642, 0, 40, 680);
+        offScreenBuffer.fillRect (0, 640, 680, 40);
+        offScreenBuffer.fillRect (640, 0, 44, 680);
 
         // Transfer the offScreenBuffer to the screen
 		g.drawImage (offScreenImage, 0, 0, this);
@@ -121,16 +154,16 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 	@Override
 	public void keyPressed(KeyEvent e) {
 		int key = e.getKeyCode();
-		if(key == KeyEvent.VK_A) {
+		if(key == KeyEvent.VK_LEFT) {
 			left = true;
 			right = false;
-		}else if(key == KeyEvent.VK_D) {
+		}else if(key == KeyEvent.VK_RIGHT) {
 			right = true;
 			left = false;
-		}else if(key == KeyEvent.VK_W) {
+		}else if(key == KeyEvent.VK_UP) {
 			up = true;
 			down = false;
-		}else if(key == KeyEvent.VK_S) {
+		}else if(key == KeyEvent.VK_DOWN) {
 			down = true;
 			up = false;
 		}
@@ -139,27 +172,19 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 	@Override
 	public void keyReleased(KeyEvent e) {
 		int key = e.getKeyCode();
-		if(key == KeyEvent.VK_A) {
+		if(key == KeyEvent.VK_LEFT) {
 			left = false;
-		}else if(key == KeyEvent.VK_D) {
+		}else if(key == KeyEvent.VK_RIGHT) {
 			right = false;
-		}else if(key == KeyEvent.VK_W) {
+		}else if(key == KeyEvent.VK_UP) {
 			up = false;
-		}else if(key == KeyEvent.VK_S) {
+		}else if(key == KeyEvent.VK_DOWN) {
 			down = false;
 		}
 	}
 	
 	void move() {
-		if(left)
-			rect.x -= speed;
-		else if(right)
-			rect.x += speed;
-		
-		if(up)
-			rect.y += -speed;
-		else if(down)
-			rect.y += speed;
+
 	}
 	
 	void keepInBound() {
@@ -219,7 +244,7 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener {
 	
 	public static void main(String[] args) {
 		JFrame frame = new JFrame ("Example");
-		mainSnakeGame myPanel = new mainSnakeGame ();
+		mainSnakeGame myPanel = new mainSnakeGame();
 		frame.add(myPanel);
 		frame.addKeyListener(myPanel);
 		frame.setVisible(true);
