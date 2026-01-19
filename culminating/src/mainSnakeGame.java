@@ -1,299 +1,554 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.*;
+// INTRODUCTORY COMMENTS
+// This is our version of a popular game called Snake.
+// Made by Matthew Tam and Eric Lu on 01/21/2025 for final ICS game.
+// Created on VS Code.
+
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.io.File;
-import javax.swing.*;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 
 @SuppressWarnings("serial")
 public class mainSnakeGame extends JPanel implements Runnable, KeyListener, ActionListener {
-	
-	Rectangle[] walls = new Rectangle[5];
-	boolean up, down, left, right;
-	int speed = 6;
-	int screenWidth = 680;
-	int screenHeight = 680;
-	Thread thread;
-	int FPS = 60;
-    Graphics offScreenBuffer;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
-    Image offScreenImage;
-	int SQUARE_SIZE = 60;
-	int board[][];
-	Image apple;
-	int xPos, yPos;
-	int randX, randY;
-	int [][] snake = new int [100][2];
-	int snakeLength = 3;
-	int points = 0;
-	long startTime, timeElapsed;
-	int frameCount = 0;
-	
-	public mainSnakeGame() {
-		setFocusable(true);
-		requestFocusInWindow();
-		addKeyListener(this);
-		setPreferredSize(new Dimension(screenWidth, screenHeight));
-		setVisible(true);
-        board = new int [10][10];
-		thread = new Thread(this);
-		thread.start();
-		snake[0][0] = 0;
-		snake[0][1] = 4;
-		snake[1][0] = 1;
-		snake[1][1] = 4;
-		snake[2][0] = 2;
-		snake[2][1] = 4;
+    // Initialize global variables
+    int gameState = 0; 
+    int x = 160;
+    int y = 280;
+    boolean up = false;
+    boolean down = false;
+    boolean right = false;
+    boolean left = false;
+    boolean start = false;
+    int screenWidth = 680;
+    int screenHeight = 680;
+    Thread thread;
+    int FPS = 10;
+    int SQUARE_SIZE = 60;
+    int OFFSET = 40; 
+    Image apple;
+    Image logo;
+    int [] appleX = new int [3];
+    int [] appleY = new int [3];
+    int [][] snake = new int [100][2];
+    int snakeLength = 3;
+    int points = 0;
+    int highscore = 0;
+    boolean run = true;
+    String message = "";
+    String popup = "Your Score";
+    String popup2 = "About";
+    String popup3 = "Instructions";
+    boolean showMsg = true;
+    Clip collect;
+    Clip lose;
+    int numApples = 1;
+    static Image cursorImage; 
+    
+    // Definition: Constructor
+    // Parameters: None
+    // Return: None
+    public mainSnakeGame() {
+        System.out.println("Constructor");
+        setFocusable(true);
+        requestFocusInWindow();
+        addKeyListener(this);
+        setPreferredSize(new Dimension(screenWidth, screenHeight));
+        setVisible(true);
+        // Initialize Snake Positions
+        snake[0][0] = 2; snake[0][1] = 4; 
+        snake[1][0] = 1; snake[1][1] = 4;
+        snake[2][0] = 0; snake[2][1] = 4;    
+        loadResources();
+    }
+    
+    // Description: Open images + sound files
+    // Parameters: None
+    // Return: Void
+    public void loadResources() {
+        try {
+            // Sfx stuff
+            try {
+                AudioInputStream sound = AudioSystem.getAudioInputStream(getClass().getResource("/collect.wav"));
+                collect = AudioSystem.getClip();
+                collect.open(sound);
+                
+                sound = AudioSystem.getAudioInputStream(getClass().getResource("/lose.wav"));
+                lose = AudioSystem.getClip();
+                lose.open(sound);
+            } catch (Exception e) {
+                
+            }
 
-	}
-	
-	@Override
-	public void run() {
-		initialize();
-		while(true) {
-			//main game loop
-			update();
-			this.repaint();
-			try {
-				Thread.sleep(1000/FPS);
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	public void initialize() {
-		startTime = System.currentTimeMillis();
-		timeElapsed = 0;
-		FPS = 60;
-		for(int i = 0; i < 100000; i++) {
-			// this is just to delay time
-			String s = "set up stuff blah blah blah";
-			s.toUpperCase();
-		}
-
-		// Set apple image in random location
-		apple = new ImageIcon(getClass().getResource("APPLE.png")).getImage();
-		randX = 465;
-		randY = 285;
-
-		System.out.println("Thread: Done initializing game");
-	}
-	
-	public void update() {
-		//update stuff
-		timeElapsed = System.currentTimeMillis() - startTime;
-
-		frameCount++;
-		move();
-		keepInBound();
-		checkCollision();
-	}
-	
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-	// offScreenBuffer
-	if (offScreenImage == null ||
-	    offScreenImage.getWidth(null) != getWidth() ||
-    	offScreenImage.getHeight(null) != getHeight()) 
-	{
-    	offScreenImage = createImage(getWidth(), getHeight());
-    	offScreenBuffer = offScreenImage.getGraphics();
-	}
-
+            // Images
+            if (getClass().getResource("/snake logo.png") != null) {
+                logo = new ImageIcon(getClass().getResource("/snake logo.png")).getImage();
+            }
+            if (getClass().getResource("/APPLE.png") != null) {
+                apple = new ImageIcon(getClass().getResource("/APPLE.png")).getImage();
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Description: Code to runs the game
+    // Parameters: None
+    // Return: Void
+    @Override
+    public void run() {
+        initialize();
+        while(run) {
+            update();
+            this.repaint();
+            try {
+                Thread.sleep(3500/FPS); 
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    // Description: Setting up the apples
+    // Parameters: None
+    // Return: V
+    public void initialize() {
+		appleX[0] = 7;
+		appleY[0] = 4;
 		
-		offScreenBuffer.setColor(getBackground());
-		offScreenBuffer.fillRect(0, 0, getWidth(), getHeight());
-		Graphics2D g2 = (Graphics2D) g;
+		// If the user selected 2 or 3, spawn the rest randomly
+		for (int i = 1; i < numApples; i++) {
+			respawnSpecificApple(i);
+		}
+	}
+    
+	// Description: Update the game
+    // Parameters: None
+    // Return: Void
+    public void update() {
+        this.requestFocusInWindow();
+        if (gameState == 0) return;
+        move();
+        keepInBound();
+        checkApples(); // Checks all apples
+        selfCollision();
+    } 
+    
+    // Description: paintComponent
+    // Parameters: 2d graphics???
+    // Return: Void
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
 
-		for (int row = 1; row < 11; row++) { // row
-            for (int column = 1; column < 11; column++) { // column
-				
-				// Find the x and y positions for each row and column                
-				xPos = (column - 1) * SQUARE_SIZE + 40;
-				yPos = (row - 1) * SQUARE_SIZE + 40;
+        // Title screen with paintComponent 😭😭😭😭
+        if (gameState == 0) {
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            g.setColor(Color.BLACK);
+            Font bigFont = new Font("Calibri", Font.PLAIN, 30);
+            g.setFont (bigFont);
+            g.drawString("Press [SPACE] To Start", 205, 475);
+            if(logo != null) g.drawImage(logo, 10, 35, 700, 700, this);
+            return; 
+        }
 
-				// Draw the squares
-                Color myColor = new Color(0x2E7D32);
-                offScreenBuffer.setColor (myColor);
-                if (column % 2 == 0) {
-                    if (row % 2 == 0) {
-                        myColor = new Color(0xA5D6A7);
-                        offScreenBuffer.setColor (myColor);
-				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
-                    } else {
-                        myColor = new Color (0x2A914E);
-                        offScreenBuffer.setColor (myColor);
-				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
-                    }
-                } else {
-                    if (row % 2 == 0) {
-                        myColor = new Color(0x2A914E);
-                        offScreenBuffer.setColor (myColor);
-				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
-                    } else {
-                        myColor = new Color (0xA5D6A7);
-                        offScreenBuffer.setColor (myColor);
-				    	offScreenBuffer.fillRect (xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
+        // Draw Background
+        g.setColor(getBackground());
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+        // Draw Checkerboard
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                // Calculate pixel positions 
+                int xPos = col * SQUARE_SIZE + OFFSET;
+                int yPos = row * SQUARE_SIZE + OFFSET;
+                
+                if ((col + row) % 2 == 0) g.setColor(new Color(0xA5D6A7));
+                else g.setColor(new Color(0x2A914E));
+                
+                g.fillRect(xPos, yPos, SQUARE_SIZE, SQUARE_SIZE);
+            }
+        }
+
+        // Draw pples
+        for (int i = 0; i < numApples; i++){
+            int drawX = appleX[i] * SQUARE_SIZE + OFFSET;
+            int drawY = appleY[i] * SQUARE_SIZE + OFFSET;
+            
+            if (apple != null) {
+                g.drawImage(apple, drawX, drawY, SQUARE_SIZE, SQUARE_SIZE, this);
+            } else {
+                g.setColor(Color.RED);
+                g.fillOval(drawX + 10, drawY + 10, 40, 40); 
+            }
+        }
+
+        // Draw borders
+        g.setColor(new Color(0x2E7D32));
+        g.fillRect(0, 0, 680, 40); //top
+        g.fillRect(0, 0, 40, 680); //left
+        g.fillRect(0, 640, 680, 40); //right
+        g.fillRect(640, 0, 44, 680); //bottom
+
+        // Draw snake
+        g.setColor(Color.BLUE);
+        for (int i = 0; i < snakeLength; i++) {
+            g.fillRect(OFFSET + (snake[i][0] * SQUARE_SIZE), OFFSET + (snake[i][1] * SQUARE_SIZE), SQUARE_SIZE, SQUARE_SIZE);
+        }
+
+        // Display information stuff
+        g.setColor(Color.WHITE);
+        g.drawString("Points: " + points, 40, 17);
+        g.drawString("Highscore: " + highscore, 40, 31);
+    }
+
+    // Description: Does stuff when certain keys are pressed
+    // Parameters: None
+    // Return: Void
+    @Override
+    public void keyPressed(KeyEvent e) {
+        int key = e.getKeyCode();
+        if (gameState == 0) {
+            if (key == KeyEvent.VK_SPACE) {
+                gameState = 1; 
+            } 
+            return;
+        }
+        if(key == KeyEvent.VK_LEFT && !right) {
+            left = true; right = false; up = false; down = false;
+            start = true;
+        } else if(key == KeyEvent.VK_RIGHT && !left) {
+            left = false; right = true; up = false; down = false;
+            start = true;
+        } else if(key == KeyEvent.VK_UP && !down) {
+            left = false; right = false; up = true; down = false;
+            start = true;
+        } else if(key == KeyEvent.VK_DOWN && !up) {
+            left = false; right = false; down = true; up = false;
+            start = true;
+        }
+    } 
+
+    // Description: Adjusts the snakes position in the array
+    // Parameters: None
+    // Return: None
+    void move() {
+        if (!start) return;
+
+        // Move Body
+        for (int i = snakeLength - 1; i > 0; i--) {
+            snake[i][0] = snake[i - 1][0];
+            snake[i][1] = snake[i - 1][1];
+        }
+
+        // Move Head
+        if (left) snake[0][0] -= 1;
+        else if (right) snake[0][0] += 1;
+        else if (up) snake[0][1] -= 1;
+        else if (down) snake[0][1] += 1;
+        
+        x = snake[0][0] * SQUARE_SIZE + OFFSET;
+        y = snake[0][1] * SQUARE_SIZE + OFFSET;
+    } 
+    
+    // Description: Checks if the snake touches the border
+    // Paramaters: None
+    // Return: None
+    void keepInBound() {
+        int headX = snake[0][0];
+        int headY = snake[0][1];
+        
+        if (headX < 0 || headX > 9 || headY < 0 || headY > 9){
+            triggerLose();
+        }
+    } 
+    
+    // Description: Spawns new apples and makes sure it doesn't spawn on other apples or below the snake
+    // Parameters: None
+    // Return: None
+    void spawnNewApples() {
+        for(int i = 0; i < 3; i++) {
+            boolean valid = false;
+            while(!valid) {
+                int newX = (int)(Math.random() * 10);
+                int newY = (int)(Math.random() * 10);
+                
+                // Check collision with snake
+                boolean onSnake = false;
+                for(int s = 0; s < snakeLength; s++) {
+                    if(snake[s][0] == newX && snake[s][1] == newY) {
+                        onSnake = true;
+                        break;
                     }
                 }
+                
+                // Check collision with other apples
+                boolean onOtherApple = false;
+                for(int j=0; j<i; j++) { // Check apples already spawned
+                    if(appleX[j] == newX && appleY[j] == newY) {
+                        onOtherApple = true;
+                        break;
+                    }
+                }
+
+                if(!onSnake && !onOtherApple) {
+                    appleX[i] = newX;
+                    appleY[i] = newY;
+                    valid = true;
+                }
+            }
+        }
+    }
+    
+    // Description: spawns a new apple at a random position
+    // Parameters: int index. this is to respawn only the specific apple that was eaten
+    // return: none 
+    void respawnSpecificApple(int index) {
+        boolean valid = false;
+        while(!valid) {
+            int newX = (int)(Math.random() * 10);
+            int newY = (int)(Math.random() * 10);
+            
+            boolean onSnake = false;
+            for(int s = 0; s < snakeLength; s++) {
+                if(snake[s][0] == newX && snake[s][1] == newY) {
+                    onSnake = true;
+                    break;
+                }
+            }
+            if(!onSnake) {
+                appleX[index] = newX;
+                appleY[index] = newY;
+                valid = true;
+            }
+        }
+    }
+
+    // description: checks if an apple is eaten
+    // return: none
+    // parameters: none
+    void checkApples() {
+        int headX = snake[0][0];
+        int headY = snake[0][1];
+
+        // Loop through all active apples
+        for (int i = 0; i < numApples; i++) {
+            if (headX == appleX[i] && headY == appleY[i]) {
+                // Ate apple at index i
+				growSnake();
+                snakeLength++;
+                points++;
+                if (points > highscore) {
+                    highscore = points;
+                } 
+                
+                if (collect != null) {
+                    collect.setFramePosition(0);
+                    collect.start();
+                }
+                
+                growSnake();
+                respawnSpecificApple(i); // Only respawn the one that was eaten
+            }
+        }
+    }
+
+    
+    // checks if self collides
+    // return: none
+    // parameters: none
+    void selfCollision() {
+        for (int i = 1; i < snakeLength; i++) {
+            if (snake[0][0] == snake[i][0] && snake[0][1] == snake[i][1]) { // if head is on the same block as a body block
+                triggerLose();
+            }
+        }
+    }
+    
+    // description: triggers the lose sound effect and restarts the game.
+    void triggerLose() {
+        if(lose != null) {
+            lose.setFramePosition(0);
+            lose.start();
+        }
+        restart();
+    }
+
+    // descrioption: adds a block to the end of the snake
+    // return: none
+    // parameter: none
+    void growSnake() { 
+        snake[snakeLength][0] = snake[snakeLength - 1][0];
+        snake[snakeLength][1] = snake[snakeLength - 1][1];
+    }
+
+
+    public static void scorePopup(String message, String popup){
+        JOptionPane.showMessageDialog(null, message, popup, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+
+    @Override
+    public void keyTyped(KeyEvent e) {} 
+
+
+    // description: resets the snake to the start and makes it length 3. also shows the user their high score
+    public void restart(){
+        // resets the snake to the starting size
+        snakeLength = 3;
+        snake[0][0] = 2; 
+		snake[0][1] = 4; 
+        snake[1][0] = 1; 
+		snake[1][1] = 4;
+        snake[2][0] = 0; 
+		snake[2][1] = 4;   
+        // makes the snake stop moving 
+        up = false; 
+		down = false; 
+		left = false; 
+		right = false;
+        
+        if (showMsg){
+            message = "Score: " + points + "\nHighscore: " + highscore;
+            scorePopup(message, popup);
+        }
+        points = 0;
+        start = false;
+        initialize();
+    }
+
+    // this is the action listerner for the menu
+    @Override
+    public void actionPerformed(ActionEvent event) {
+        String eventName = event.getActionCommand ();
+        if (eventName.equals("Exit")) {
+            System.exit(0);
+        }
+        if (eventName.equals("New")){
+            if (gameState == 0) {
+                showMsg = false;
+                gameState = 1;
+            } else if (gameState == 1) {
+                showMsg = true;
+            }
+            restart();
+            highscore = 0;
+        }
+        if (eventName.equals ("About")){ // pops up the creators the game
+            message = "Snake Game\nCreated by Eric Lu & Matthew Tam\nGr. 11 Semester 1 [2025-2026]";
+            scorePopup(message, popup2);
+        }
+        if (eventName.equals("Instructions")){ // pops up the intructions menu
+            message = "Eat apples. Don't hit walls. Don't eat yourself.";
+            scorePopup(message, popup3);
+        }
+        if (eventName.equals("Apple1")) { // 1 apple
+			numApples = 1;
+			restart();
+			spawnNewApples(); 
+		}
+        if (eventName.equals("Apple2")) { // 2 apple
+			numApples = 2; 
+			restart();
+			spawnNewApples(); 
 			}
-		}
-		// Draw apple
-		offScreenBuffer.drawImage(apple, randX, randY, this);
+        if (eventName.equals("Apple3")) { // 3 applle
+			numApples = 3; 
+			restart();
+			spawnNewApples(); 
+			}
+        this.requestFocusInWindow();
+    }
 
-        // Draw border
-		Color myColor = new Color (0x2E7D32);
-        offScreenBuffer.setColor (myColor);
-        offScreenBuffer.fillRect (0, 0, 680, 40);
-        offScreenBuffer.fillRect (0, 0, 40, 680);
-        offScreenBuffer.fillRect (0, 640, 680, 40);
-        offScreenBuffer.fillRect (640, 0, 44, 680);
+    // main method
+    public static void main(String[] args) {
+        
+        // Menu Setup
+        JMenu gameMenu = new JMenu ("Game");
+        JMenu aboutMenu = new JMenu ("Info");
+        JMenu applesMenu = new JMenu ("Game Modes");
 
-		// Draw snake
-		offScreenBuffer.setColor(Color.BLUE);
-		for (int i = 0; i < snakeLength; i++) {
-			offScreenBuffer.fillRect(40 + snake[i][0] * 60, 40 + snake[i][1] * 60, 60, 60);
-		}
+        JMenuItem newOption = new JMenuItem ("New");
+        JMenuItem exitOption = new JMenuItem ("Exit");
+        JMenuItem aboutOption = new JMenuItem ("About");
+        JMenuItem instructionsOption = new JMenuItem ("How to play");
+        
+        JRadioButtonMenuItem apple1 = new JRadioButtonMenuItem ("1 Apple");
+        JRadioButtonMenuItem apple2 = new JRadioButtonMenuItem ("2 Apples");
+        JRadioButtonMenuItem apple3 = new JRadioButtonMenuItem ("3 Apples");
+        
+        apple1.setSelected(true); // Default selection
+        ButtonGroup group = new ButtonGroup();
+        group.add(apple1); group.add(apple2); group.add(apple3);
 
-		// Display information stuff
-		offScreenBuffer.setColor(Color.WHITE);
-		offScreenBuffer.drawString("" + timeElapsed + " ms since start of program", 40, 18);
-		offScreenBuffer.drawString("" + timeElapsed/1000 + " seconds since the start of program", 40, 31);
-		offScreenBuffer.drawString(frameCount + " frames ran since the start of program", 280, 18);
-		offScreenBuffer.drawString("FPS: " + String.format("%.2f", (double)frameCount / ((double)timeElapsed / 1000)), 280, 31);
-		offScreenBuffer.drawString("Points: " + points, 580, 18);
+        gameMenu.add(newOption);
+        gameMenu.add(exitOption);
+        aboutMenu.add(aboutOption);
+        aboutMenu.add(instructionsOption);
+        applesMenu.add(apple1); applesMenu.add(apple2); applesMenu.add(apple3);
 
-        // Transfer the offScreenBuffer to the screen
-		g.drawImage (offScreenImage, 0, 0, this);
-	}
+        JFrame frame = new JFrame ("Snake Game");
+        mainSnakeGame myPanel = new mainSnakeGame();
 
-	@Override
-	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+        // Mouse cursor
+		cursorImage = Toolkit.getDefaultToolkit().getImage(mainSnakeGame.class.getResource("/snake cursor.png"));
+		Point hotspot = new Point (0,0);
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+		Cursor cursor = toolkit.createCustomCursor(cursorImage,  hotspot, "cursor");
+		frame.setCursor(cursor);
 
-	@Override
-	public void keyPressed(KeyEvent e) {
-		int key = e.getKeyCode();
-		if(key == KeyEvent.VK_LEFT) {
-			left = true;
-			right = false;
-			up = false;
-			down = false;
-		}else if(key == KeyEvent.VK_RIGHT) {
-			left = false;
-			right = true;
-			up = false;
-			down = false;
-		}else if(key == KeyEvent.VK_UP) {
-			left = false;
-			right = false;
-			up = true;
-			down = false;
-		}else if(key == KeyEvent.VK_DOWN) {
-			left = false;
-			right = false;
-			down = true;
-			up = false;
-		}
-	}
+        // Listeners
+        newOption.setActionCommand ("New"); newOption.addActionListener (myPanel);
+        exitOption.setActionCommand ("Exit"); exitOption.addActionListener (myPanel);
+        aboutOption.setActionCommand("About"); aboutOption.addActionListener (myPanel);
+        instructionsOption.setActionCommand("Instructions"); instructionsOption.addActionListener (myPanel);
+        apple1.setActionCommand("Apple1"); apple1.addActionListener (myPanel);
+        apple2.setActionCommand("Apple2"); apple2.addActionListener (myPanel);
+        apple3.setActionCommand("Apple3"); apple3.addActionListener (myPanel);
 
-	// public void snakeCoordinate {
-		
-	// }
-	
-	// void move() {
-	// 	if(left)
-	// 		rect.x -= speed;
-	// 	else if(right)
-	// 		rect.x += speed;
-	// 	if(up)
-	// 		rect.y += -speed;
-	// 	else if(down)
-	// 		rect.y += speed;
-	// }
-	
-	// void keepInBound() {
-	// 	if (rect.x < 40)
-	// 		rect.x = 40;
-	// 	else if (rect.x > 600)
-	// 		rect.x = 600;
+        JMenuBar mainMenu = new JMenuBar ();
+        mainMenu.add (gameMenu);
+        mainMenu.add (aboutMenu);
+        mainMenu.add (applesMenu);
+        
+        frame.setJMenuBar (mainMenu);
+        frame.add(myPanel);
+        frame.pack(); // 
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
 
-	// 	if (rect.y < 40)
-	// 		rect.y = 40;
-	// 	else if (rect.y > 600)
-	// 		rect.y = 600;
-	// }
-	
-	void spawnNewApple() {
-    	randX = ((int)(Math.random()*10)) * SQUARE_SIZE + 40;
-    	randY = ((int)(Math.random()*10)) * SQUARE_SIZE + 40;
-	}
-
-	// void checkCollision() {
-	// 	Rectangle appleRect = new Rectangle (randX, randY, apple.getWidth(null), apple.getHeight(null));
-	// 	if (rect.intersects(appleRect)){
-	// 		points ++;
-	// 		spawnNewApple();	
-	// 	}	
-	// }
-
-	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'keyReleased'");
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent event) {
-		String eventName = event.getActionCommand ();
-		if (eventName.equals("Exit")){
-			System.exit(0);
-		}
-	}
-	
-	public static void main(String[] args) {
-		// Set up the Game Menu
-		JMenu gameMenu = new JMenu ("Game");
-		
-		// Set up the Game MenuItems and add to gameMenu (with a separator)
-		JMenuItem newOption = new JMenuItem ("New");
-		JMenuItem exitOption = new JMenuItem ("Exit");
-
-		gameMenu.add (newOption);
-		gameMenu.addSeparator ();
-		gameMenu.add (exitOption);
-
-		JFrame frame = new JFrame ("P4 ICS3U Semester 1 - Snake Game Culminating (2025-2026) by Eric Lu & Matthew Tam");
-		mainSnakeGame myPanel = new mainSnakeGame();
-
-		newOption.setActionCommand ("New");
-		newOption.addActionListener (myPanel);
-		exitOption.setActionCommand ("Exit");
-		exitOption.addActionListener (myPanel);
-
-		// Add final menus to JMenuBar mainMenu
-		JMenuBar mainMenu = new JMenuBar ();
-		mainMenu.add (gameMenu);
-		
-		// Set the menu bar for this frame to mainMenu
-		frame.setJMenuBar (mainMenu);
-		frame.add(myPanel);
-		frame.setVisible(true);
-		myPanel.requestFocusInWindow();
-		frame.pack();
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setResizable(false);
-		frame.setLocationRelativeTo(null);
-	}
-} // class
+        myPanel.thread = new Thread(myPanel);
+        myPanel.thread.start();
+    }
+}
