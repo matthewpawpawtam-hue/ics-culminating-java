@@ -20,12 +20,12 @@ January 21, 2026, 18:00 PM
 
 // KNOWN BUGS
 - Pressing two movement keys too quickly can cause the snake to collide with itself before the game updates
-- Sometimes having multiple apples at once randomly messes up growSnake
 
 // CHANGES FROM INITIAL PROPOSAL
 - Only 1 window was needed for both the game and title screen
 - Removed game mode: Teleportation 
 - New game mode: Chose the number of apples that appear on the board at once
+- Choose snake speed: Chose between slow, medium, and fast
 
 // CONTRIBUTIONS
 - Board (Eric & Matthew)
@@ -49,3 +49,5 @@ January 21, 2026, 18:00 PM
 https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=38299
 - Sound Effect by
 https://pixabay.com/users/make_more_sound-35032787/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=145478
+- Sound Effect by 
+https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=82807
