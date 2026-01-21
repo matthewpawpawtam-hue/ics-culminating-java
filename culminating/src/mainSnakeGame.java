@@ -472,6 +472,7 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
         if (eventName.equals("New")){
             if (gameState == 0) {
                 showMsg = false;
+                spawnNewApples();
                 gameState = 1;
             } else if (gameState == 1) {
                 showMsg = true;
@@ -496,7 +497,6 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
             else if (gameState == 1){
                 numApples = 1;
                 restart();
-                spawnNewApples(); 
             }
 		}
         if (eventName.equals("Apple2")) { // 2 apple
@@ -508,7 +508,6 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
             else if (gameState == 1){
                 numApples = 2; 
                 restart();
-                spawnNewApples();
             }
 		}
         if (eventName.equals("Apple3")) { // 3 applle
@@ -520,35 +519,37 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
             else if (gameState == 1){
                 numApples = 3; 
                 restart();
-                spawnNewApples(); 
             }
 		}
         if (eventName.equals("Speed1")){ // Slow
-            try {
-                Thread.sleep(2500/FPS); 
-            } catch(Exception e) {
-                e.printStackTrace();
+            if (gameState == 0){
+                FPS = 5;
+                gameState = 1;
             }
-            restart();
-            spawnNewApples();
+            else if (gameState == 1){
+                FPS = 5;
+                restart();
+            }
         }
         if (eventName.equals("Speed2")){ // Medium // default
-            try {
-                Thread.sleep(3500/FPS); 
-            } catch(Exception e) {
-                e.printStackTrace();
+            if (gameState == 0){
+                FPS = 10;
+                gameState = 1;
             }
-            restart();
-            spawnNewApples();
+            else if (gameState == 1){
+                FPS = 10;
+                restart();
+            }
         }
         if (eventName.equals("Speed3")){ // Fast
-            try {
-                Thread.sleep(4500/FPS); 
-            } catch(Exception e) {
-                e.printStackTrace();
+            if (gameState == 0){
+                FPS = 20;
+                gameState = 1;
             }
-            restart();
-            spawnNewApples();
+            else if (gameState == 1){
+                FPS = 20;
+                restart();
+            }
         }
         this.requestFocusInWindow();
     }
