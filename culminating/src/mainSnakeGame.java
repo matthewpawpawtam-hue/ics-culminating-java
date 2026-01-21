@@ -58,6 +58,7 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
     int snakeLength = 3;
     int points = 0;
     int highscore = 0;
+    int numApples = 1;
     boolean run = true;
     String message = "";
     String popup = "Your Score";
@@ -66,7 +67,8 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
     boolean showMsg = true;
     Clip collect;
     Clip lose;
-    int numApples = 1;
+    Clip victory;
+
     static Image cursorImage; 
     
     // Definition: Constructor
@@ -100,6 +102,11 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
                 sound = AudioSystem.getAudioInputStream(getClass().getResource("/lose.wav"));
                 lose = AudioSystem.getClip();
                 lose.open(sound);
+
+                sound = AudioSystem.getAudioInputStream(getClass().getResource("/victory.wav"));
+                victory = AudioSystem.getClip();
+                victory.open(sound);
+
             } catch (Exception e) {
                 
             }
@@ -157,17 +164,18 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
         keepInBound();
         checkApples(); // Checks all apples
         selfCollision();
+        checkWin();
     } 
     
     // Description: paintComponent
-    // Parameters: 2d graphics???
+    // Parameters: graphics to paint board and everything
     // Return: Void
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
 
-        // Title screen with paintComponent 😭😭😭😭
+        // Title screen with paintComponent
         if (gameState == 0) {
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, getWidth(), getHeight());
@@ -197,7 +205,7 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
             }
         }
 
-        // Draw pples
+        // Draw apples
         for (int i = 0; i < numApples; i++){
             int drawX = appleX[i] * SQUARE_SIZE + OFFSET;
             int drawY = appleY[i] * SQUARE_SIZE + OFFSET;
@@ -351,6 +359,14 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
         }
     }
 
+    void checkWin() {
+        if (snakeLength == 100) {
+            victory.setFramePosition(0); // starts at beginning of audio clip
+            victory.start();
+            restart();
+        }
+    }
+
     // description: checks if an apple is eaten
     // return: none
     // parameters: none
@@ -464,7 +480,7 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
             highscore = 0;
         }
         if (eventName.equals ("About")){ // pops up the creators the game
-            message = "Snake Game\nCreated by Eric Lu & Matthew Tam\nGr. 11 Semester 1 [2025-2026]";
+            message = "Snake Game\nCreated by Eric L. & Matthew T.\nGr. 11 Semester 1, 2025-2026";
             scorePopup(message, popup2);
         }
         if (eventName.equals("Instructions")){ // pops up the intructions menu
@@ -472,20 +488,68 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
             scorePopup(message, popup3);
         }
         if (eventName.equals("Apple1")) { // 1 apple
-			numApples = 1;
-			restart();
-			spawnNewApples(); 
+			if (gameState == 0){
+                numApples = 1;
+                spawnNewApples();
+                gameState = 1;
+            }
+            else if (gameState == 1){
+                numApples = 1;
+                restart();
+                spawnNewApples(); 
+            }
 		}
         if (eventName.equals("Apple2")) { // 2 apple
-			numApples = 2; 
-			restart();
-			spawnNewApples(); 
-			}
+			if (gameState == 0){
+                numApples = 2;
+                spawnNewApples();
+                gameState = 1;
+            }
+            else if (gameState == 1){
+                numApples = 2; 
+                restart();
+                spawnNewApples();
+            }
+		}
         if (eventName.equals("Apple3")) { // 3 applle
-			numApples = 3; 
-			restart();
-			spawnNewApples(); 
-			}
+            if (gameState == 0){
+                numApples = 3;
+                spawnNewApples();
+                gameState = 1;
+            }
+            else if (gameState == 1){
+                numApples = 3; 
+                restart();
+                spawnNewApples(); 
+            }
+		}
+        if (eventName.equals("Speed1")){ // Slow
+            try {
+                Thread.sleep(2500/FPS); 
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            restart();
+            spawnNewApples();
+        }
+        if (eventName.equals("Speed2")){ // Medium // default
+            try {
+                Thread.sleep(3500/FPS); 
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            restart();
+            spawnNewApples();
+        }
+        if (eventName.equals("Speed3")){ // Fast
+            try {
+                Thread.sleep(4500/FPS); 
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            restart();
+            spawnNewApples();
+        }
         this.requestFocusInWindow();
     }
 
@@ -496,6 +560,7 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
         JMenu gameMenu = new JMenu ("Game");
         JMenu aboutMenu = new JMenu ("Info");
         JMenu applesMenu = new JMenu ("Game Modes");
+        JMenu speedMenu = new JMenu ("Snake Speed");
 
         JMenuItem newOption = new JMenuItem ("New");
         JMenuItem exitOption = new JMenuItem ("Exit");
@@ -505,16 +570,32 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
         JRadioButtonMenuItem apple1 = new JRadioButtonMenuItem ("1 Apple");
         JRadioButtonMenuItem apple2 = new JRadioButtonMenuItem ("2 Apples");
         JRadioButtonMenuItem apple3 = new JRadioButtonMenuItem ("3 Apples");
+        JRadioButtonMenuItem speed1 = new JRadioButtonMenuItem ("Slow");
+        JRadioButtonMenuItem speed2 = new JRadioButtonMenuItem ("Medium");
+        JRadioButtonMenuItem speed3 = new JRadioButtonMenuItem ("Fast");
         
         apple1.setSelected(true); // Default selection
         ButtonGroup group = new ButtonGroup();
-        group.add(apple1); group.add(apple2); group.add(apple3);
+        group.add(apple1);
+        group.add(apple2);
+        group.add(apple3);
+
+        speed2.setSelected(true); // Default selection
+        ButtonGroup group2 = new ButtonGroup();
+        group2.add(speed1);
+        group2.add(speed2);
+        group2.add(speed3);
 
         gameMenu.add(newOption);
         gameMenu.add(exitOption);
         aboutMenu.add(aboutOption);
         aboutMenu.add(instructionsOption);
-        applesMenu.add(apple1); applesMenu.add(apple2); applesMenu.add(apple3);
+        applesMenu.add(apple1);
+        applesMenu.add(apple2);
+        applesMenu.add(apple3);
+        speedMenu.add(speed1);
+        speedMenu.add(speed2);
+        speedMenu.add(speed3);
 
         JFrame frame = new JFrame ("Snake Game");
         mainSnakeGame myPanel = new mainSnakeGame();
@@ -527,18 +608,32 @@ public class mainSnakeGame extends JPanel implements Runnable, KeyListener, Acti
 		frame.setCursor(cursor);
 
         // Listeners
-        newOption.setActionCommand ("New"); newOption.addActionListener (myPanel);
-        exitOption.setActionCommand ("Exit"); exitOption.addActionListener (myPanel);
-        aboutOption.setActionCommand("About"); aboutOption.addActionListener (myPanel);
-        instructionsOption.setActionCommand("Instructions"); instructionsOption.addActionListener (myPanel);
-        apple1.setActionCommand("Apple1"); apple1.addActionListener (myPanel);
-        apple2.setActionCommand("Apple2"); apple2.addActionListener (myPanel);
-        apple3.setActionCommand("Apple3"); apple3.addActionListener (myPanel);
+        newOption.setActionCommand ("New");
+        newOption.addActionListener (myPanel);
+        exitOption.setActionCommand ("Exit");
+        exitOption.addActionListener (myPanel);
+        aboutOption.setActionCommand("About");
+        aboutOption.addActionListener (myPanel);
+        instructionsOption.setActionCommand("Instructions");
+        instructionsOption.addActionListener (myPanel);
+        apple1.setActionCommand("Apple1");
+        apple1.addActionListener (myPanel);
+        apple2.setActionCommand("Apple2");
+        apple2.addActionListener (myPanel);
+        apple3.setActionCommand("Apple3");
+        apple3.addActionListener (myPanel);
+        speed1.setActionCommand("Speed1");
+        speed1.addActionListener (myPanel);
+        speed2.setActionCommand("Speed2");
+        speed2.addActionListener (myPanel);
+        speed3.setActionCommand("Speed3");
+        speed3.addActionListener (myPanel);
 
         JMenuBar mainMenu = new JMenuBar ();
         mainMenu.add (gameMenu);
         mainMenu.add (aboutMenu);
         mainMenu.add (applesMenu);
+        mainMenu.add (speedMenu);
         
         frame.setJMenuBar (mainMenu);
         frame.add(myPanel);
